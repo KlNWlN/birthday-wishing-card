@@ -1,10 +1,10 @@
 /**
  * Client-side HTML5 Canvas Image Resizer and Compressor
- * Constrains width/height to max 320px and compresses to JPEG/WebP at 0.65 quality
- * Keeps the payload extremely small so it fits cleanly into URL hash with lz-string
+ * Constrains width/height to max 180px and compresses to JPEG at 0.55 quality
+ * Keeps the payload extremely small (~2-3 KB per photo) so all 4 photos fit cleanly into URL hash
  */
 
-export async function compressImageFile(file: File, maxWidth = 320, quality = 0.65): Promise<string> {
+export async function compressImageFile(file: File, maxDimension = 180, quality = 0.55): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -13,15 +13,17 @@ export async function compressImageFile(file: File, maxWidth = 320, quality = 0.
         let width = img.width;
         let height = img.height;
 
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        const maxHeight = 320;
-        if (height > maxHeight) {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
+        // Scale proportionally to fit within maxDimension x maxDimension
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
         }
 
         const canvas = document.createElement('canvas');
@@ -38,9 +40,13 @@ export async function compressImageFile(file: File, maxWidth = 320, quality = 0.
         ctx.fillStyle = '#FFFDF9';
         ctx.fillRect(0, 0, width, height);
 
+        // Smooth image rendering
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'medium';
+
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to lightweight JPEG or WebP data URL
+        // Convert to lightweight JPEG data URL
         const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(compressedDataUrl);
       };

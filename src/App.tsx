@@ -21,11 +21,15 @@ export const App: React.FC = () => {
           setCardData(decoded);
           setView('wish');
           return;
+        } else {
+          console.warn('Could not decode card data from URL hash; falling back to default card.');
+          setView('wish');
+          return;
         }
       }
 
       // Check if path or hash specifies wish view
-      if (pathname.includes('/wish') || hash.includes('/wish')) {
+      if (pathname.includes('/wish') || hash.includes('/wish') || hash.includes('data=')) {
         setView('wish');
       } else {
         setView('portal');
@@ -45,15 +49,14 @@ export const App: React.FC = () => {
   const handlePreview = (customizedData: BirthdayCardData) => {
     setCardData(customizedData);
     setView('wish');
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBackToStudio = () => {
     setView('portal');
-    // Update hash to root
-    if (window.location.hash.includes('wish')) {
-      window.location.hash = '';
+    // Clean hash without reload
+    if (window.location.hash) {
+      window.history.pushState(null, '', window.location.pathname);
     }
   };
 
